@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Flutter Hot Reload on Save",
+  "description": "Automatically triggers Flutter hot reload when a Dart file is saved",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/*.dart"
+    ]
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "kill -USR1 $(cat /tmp/flutter.pid 2>/dev/null) 2>/dev/null || true"
+  }
+}
