@@ -4,10 +4,11 @@ import 'package:location/location.dart';
 import 'package:newapp/blocs/weather/weather_bloc.dart';
 import 'package:newapp/blocs/weather/weather_event.dart';
 import 'package:newapp/blocs/weather/weather_state.dart';
-import 'package:newapp/core/network/api_client.dart';
+import 'package:newapp/models/weather_model.dart';
 import 'package:newapp/page/home/widgets/home_locaiton.dart';
 import 'package:newapp/page/home/widgets/home_temperature.dart';
 import 'package:newapp/page/home/widgets/home_weather_icon.dart';
+import 'package:newapp/providers/weather_provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -23,6 +24,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _loadLocation();
+    context.read<WeatherProvider>().getWeatherCurrnet();
   }
 
   Future<void> _loadLocation() async {
@@ -30,54 +32,24 @@ class _HomePageState extends State<HomePage> {
       bool serviceEnabled = await _location.serviceEnabled();
       if (!serviceEnabled) {
         serviceEnabled = await _location.requestService();
-        if (!serviceEnabled) {
-          _fallbackToCity();
-          return;
-        }
+        if (!serviceEnabled) return;
       }
 
       PermissionStatus permission = await _location.hasPermission();
       if (permission == PermissionStatus.denied) {
         permission = await _location.requestPermission();
-        if (permission != PermissionStatus.granted) {
-          _fallbackToCity();
-          return;
-        }
+        if (permission != PermissionStatus.granted) return;
       }
 
-      final locationData = await _location.getLocation().timeout(
-        const Duration(seconds: 5),
-        onTimeout: () => throw Exception('Location timeout'),
-      );
-
-      if (mounted) {
-        context.read<WeatherBloc>().add(
-          WeatherFetchByLocation(
-            lat: locationData.latitude ?? 0,
-            lng: locationData.longitude ?? 0,
-          ),
-        );
-      }
+      final locationData = await _location.getLocation();
     } catch (e) {
       debugPrint('Location error: $e');
-      _fallbackToCity();
-    }
-  }
-
-  void _fallbackToCity() {
-    if (mounted) {
-      context.read<WeatherBloc>().add(WeatherFetchByCity(city: 'Ho Chi Minh'));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        mini: true,
-        onPressed: () => ApiClient.alice.showInspector(),
-        child: Icon(Icons.bug_report),
-      ),
       body: Container(
         alignment: Alignment.center,
         decoration: BoxDecoration(
@@ -88,38 +60,30 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         child: SafeArea(
-          child: BlocBuilder<WeatherBloc, WeatherState>(
-            builder: (context, state) {
-              if (state is WeatherLoading || state is WeatherInitial) {
-                return Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                );
-              }
-              if (state is WeatherError) {
-                return Center(
-                  child: Text(
-                    state.message,
-                    style: TextStyle(color: Colors.white),
-                  ),
-                );
-              }
-              if (state is WeatherLoaded) {
-                final weather = state.weather;
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    HomeWeatherIcon(icon: weather.iconUrl),
-                    HomeTemperature(
-                      temp: weather.temp,
-                      windSpeed: weather.windSpeed,
-                      humidity: weather.humidity,
-                    ),
-                    HomeLocation(cityName: weather.cityName),
-                  ],
-                );
-              }
-              return SizedBox.shrink();
-            },
+          child: FutureBuilder<WeatherModel?>(
+            future: context.read<WeatherProvider>().getWeatherCurrnet(),
+            builder:
+                (BuildContext context, AsyncSnapshot<WeatherModel?> snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator(color: Colors.white);
+                  }
+                  if (snapshot.data == null) {
+                    return Text(
+                      'No data',
+                      style: TextStyle(color: Colors.white),
+                    );
+                  }
+                  WeatherModel weather = snapshot.data!;
+                  print(weather);
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      HomeWeatherIcon(icon: weather.iconUrl),
+                      HomeTemperature(temp: weather.temp),
+                      HomeLocation(cityName: weather.cityName),
+                    ],
+                  );
+                },
           ),
         ),
       ),
