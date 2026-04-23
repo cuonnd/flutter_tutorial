@@ -53,6 +53,10 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>App cần truy cập vị trí để hiển thị thời tiết khu vực của bạn.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>App cần truy cập vị trí để hiển thị thời tiết khu vực của bạn.</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

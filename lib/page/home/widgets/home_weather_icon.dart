@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 class HomeWeatherIcon extends StatelessWidget {
-  const HomeWeatherIcon({super.key});
+  final String? icon;
+
+  const HomeWeatherIcon({super.key, this.icon});
+
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
-    return Container(
-      child: Image.asset(
-        '/Users/macone/code/newapp/assets/icons/heavycloudy.png',
-        fit: BoxFit.contain,
-      ),
-    );
+    if (icon != null) {
+      return Image.network(icon!, width: 250, height: 250, fit: BoxFit.cover);
+    }
+    return Image.asset('assets/icons/heavycloudy.png', fit: BoxFit.contain);
   }
 }
